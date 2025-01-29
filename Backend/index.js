@@ -149,7 +149,7 @@ app.get("/search", async (req, res) => {
 
   try {
       const searchUrl = `${process.env.URL}${encodeURIComponent(query)}&apiKey=${process.env.API_KEY}`; // Ensure URL is encoded
-      // console.log(searchUrl);
+      console.log(searchUrl);
       const result = await fetch(searchUrl);
 
       if (!result.ok) {
