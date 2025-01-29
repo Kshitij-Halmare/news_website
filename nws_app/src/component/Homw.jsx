@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useArticles } from './ArticlesContext';
-import SetCard from './SetCard';
+import SetCard from './setCard';
 
 const HomePage = () => {
   const { articles, searchResultHeading, white } = useArticles(); // Destructure white
