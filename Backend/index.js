@@ -24,6 +24,7 @@ app.get("/", (req, res) => {
 
 // MongoDB connection URL
 const url = process.env.MONGODB_URL;
+console.log(url);
 if (!url) {
   console.error("MONGODB_URL is not set in environment variables");
   process.exit(1);
