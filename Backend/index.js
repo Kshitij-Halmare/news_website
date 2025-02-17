@@ -4,25 +4,21 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import fetch from "node-fetch"; // Ensure you're using the correct Node.js version
+import fetch from "node-fetch";
 
-// Load environment variables from .env file
 dotenv.config();
 
-// Create express app
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-// Test route to check if server is running
 app.get("/", (req, res) => {
   res.send("Server is Running");
 });
 
-// MongoDB connection URL
 const url = process.env.MONGODB_URL;
 console.log(url);
 if (!url) {
@@ -30,7 +26,6 @@ if (!url) {
   process.exit(1);
 }
 
-// Connect to MongoDB
 mongoose
   .connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
@@ -40,7 +35,6 @@ mongoose
     console.error("Database connection error:", err);
   });
 
-// User Schema
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
@@ -51,14 +45,12 @@ const userSchema = new mongoose.Schema({
 
 const userModel = mongoose.model("User", userSchema);
 
-// Function to generate JWT token
 const generateToken = (user) => {
   return jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
     expiresIn: "24h",
   });
 };
 
-// Route for user signup
 app.post("/signup", async (req, res) => {
   const { email, password, confirmPassword, ...otherDetails } = req.body;
   try {
@@ -77,10 +69,8 @@ app.post("/signup", async (req, res) => {
       email,
       password: hashedPassword,
     });
-    // console.log(newUser);
     const token = generateToken(newUser);
 
-    // localStorage.setItem("jwtToken", token);
 
     return res.status(201).json({
       message: "User created successfully",
@@ -94,7 +84,6 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// Route for user login
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -109,11 +98,10 @@ app.post("/login", async (req, res) => {
     }
 
     const token = generateToken(user);
-    console.log(token); // For debugging
 
     return res.status(200).json({
       message: "User logged in successfully",
-      token, // Send the token back to the client
+      token, 
       alert: true,
       user: { email: user.email, firstName: user.firstName, lastName: user.lastName },
     });
@@ -123,52 +111,49 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Middleware to verify JWT token
 const authenticateJWT = (req, res, next) => {
-  const token = req.headers["authorization"]?.split(" ")[1]; // Get token from Authorization header
+  const token = req.headers["authorization"]?.split(" ")[1];
   if (token) {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) {
-        return res.sendStatus(403); // Forbidden if token is invalid
+        return res.sendStatus(403);
       }
-      req.user = user; // Attach user information to request
-      next(); // Proceed to the next middleware
+      req.user = user; 
+      next(); 
     });
   } else {
-    res.sendStatus(401); // Unauthorized if token is not present
+    res.sendStatus(401); 
   }
 };
 
-// Search route (using an external API to fetch articles)
 app.get("/search", async (req, res) => {
-  const query = req.query.query; // Retrieve query from the URL query parameters
+  const query = req.query.query;
 
   if (!query) {
-      return res.status(400).json({ message: "Query parameter is required." }); // Validate query
+      return res.status(400).json({ message: "Query parameter is required." }); 
   }
 
   try {
-      const searchUrl = `${process.env.URL}${encodeURIComponent(query)}&apiKey=${process.env.API_KEY}`; // Ensure URL is encoded
+      const searchUrl = `${process.env.URL}${encodeURIComponent(query)}&apiKey=${process.env.API_KEY}`;
       console.log(searchUrl);
       const result = await fetch(searchUrl);
 
       if (!result.ok) {
-          throw new Error(`External API error: ${result.statusText}`); // Throw error if the external API responds with an error
+          throw new Error(`External API error: ${result.statusText}`); 
       }
 
       const data = await result.json();
-      res.status(200).json({ result: data }); // Send back the search result as JSON
+      res.status(200).json({ result: data }); 
   } catch (error) {
-      console.error("Search error:", error); // Log the error for debugging
-      res.status(500).json({ message: "An error occurred while searching." }); // Send error message as JSON response
+      console.error("Search error:", error); 
+      res.status(500).json({ message: "An error occurred while searching." }); 
   }
 });
 
 
-// Route for getting user profile (requires authentication)
 app.get("/profile", authenticateJWT, async (req, res) => {
   try {
-    const user = await userModel.findById(req.user.id).select("-password"); // Exclude password from response
+    const user = await userModel.findById(req.user.id).select("-password"); 
     if (user) {
       return res.status(200).json({
         message: "User profile retrieved successfully",
